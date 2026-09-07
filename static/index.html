@@ -66,4 +66,5 @@ document.getElementById('app').innerHTML='<div class="card"><h2>👑 Admin panel
 async function adminUpdateMatch(id){try{let h=document.getElementById('ah'+id).value,a=document.getElementById('aa'+id).value;if(h===''||a==='')throw Error('Ikkala golni ham kiriting');await api('/api/admin/match/update',{method:'POST',body:JSON.stringify({match_id:id,home_goals:+h,away_goals:+a})});alert('Natija saqlandi');adminPanel()}catch(e){alert(e.message)}}
 async function gen(){try{let start=document.getElementById('sd').value||new Date().toISOString().slice(0,10);let d=await api('/api/admin/generate_rounds',{method:'POST',body:JSON.stringify({start_date:start})});alert(d.rounds_created+' tur yaratildi');adminPanel()}catch(e){alert(e.message)}}async function removeUser(id){await api('/api/admin/user/remove',{method:'POST',body:JSON.stringify({telegram_id:id})});adminPanel()}async function nextSeason(){if(confirm('Yangi mavsum uchun eski o\'yinlar jadvali tozalanadi.')){await api('/api/admin/start_next_season',{method:'POST'});adminPanel()}}
 init();
+<script src="/static/chat.js"></script>
 </script></body></html>
