@@ -1,1 +1,144 @@
 
+        if (data.ok) {
+            const user = data.user;
+
+            document.getElementById("welcome").innerText =
+                "Salom, " + (user.first_name || "Foydalanuvchi") + "!";
+
+            if (user.team_name) {
+                document.getElementById("myTeam").innerText =
+                    "Jamoangiz: " + user.team_name;
+            }
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function showTeams() {
+
+    document.getElementById("teams").style.display = "block";
+    document.getElementById("standings").style.display = "none";
+    document.getElementById("results").style.display = "none";
+
+    const response = await fetch("/api/teams");
+    const teams = await response.json();
+
+    const list = document.getElementById("teamList");
+    list.innerHTML = "";
+
+    teams.forEach(team => {
+
+        const button = document.createElement("button");
+
+        button.innerText =
+            team.name + (team.taken ? " 🔒" : "");
+
+        if (team.taken) {
+            button.disabled = true;
+            button.style.background = "#999";
+        } else {
+            button.onclick = () => joinTeam(team.id);
+        }
+
+        list.appendChild(button);
+    });
+}
+
+async function joinTeam(teamId) {
+
+    const response = await fetch("/api/join", {
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json",
+            "X-Telegram-Init-Data": tg.initData
+        },
+
+        body: JSON.stringify({
+            team_id: teamId
+        })
+    });
+
+    const data = await response.json();
+
+    if (data.ok) {
+        alert("✅ Jamoa muvaffaqiyatli tanlandi!");
+        loadMe();
+        showTeams();
+    } else {
+        alert("❌ " + (data.error || "Xatolik"));
+    }
+}
+
+async function showStandings() {
+
+    document.getElementById("teams").style.display = "none";
+    document.getElementById("standings").style.display = "block";
+    document.getElementById("results").style.display = "none";
+
+    const response = await fetch("/api/standings");
+    const data = await response.json();
+
+    const list = document.getElementById("standingList");
+
+    list.innerHTML = "";
+
+    data.forEach(team => {
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${team.rank}</td>
+            <td style="text-align:left">${team.name}</td>
+            <td>${team.played}</td>
+            <td>${team.wins}</td>
+            <td>${team.draws}</td>
+            <td>${team.losses}</td>
+            <td><b>${team.points}</b></td>
+        `;
+
+        list.appendChild(row);
+    });
+}
+
+async function showResults() {
+
+    document.getElementById("teams").style.display = "none";
+    document.getElementById("standings").style.display = "none";
+    document.getElementById("results").style.display = "block";
+
+    const response = await fetch("/api/results");
+    const data = await response.json();
+
+    const list = document.getElementById("resultList");
+
+    list.innerHTML = "";
+
+    if (data.length === 0) {
+        list.innerHTML = "<p>Hali natijalar yo‘q.</p>";
+        return;
+    }
+
+    data.forEach(match => {
+
+        const div = document.createElement("div");
+
+        div.className = "card";
+
+        div.innerHTML = `
+            <b>${match.home}</b>
+            ${match.home_goals} : ${match.away_goals}
+            <b>${match.away}</b>
+        `;
+
+        list.appendChild(div);
+    });
+}
+
+loadMe();
+
+</script>
+
+</body>
+</html>
