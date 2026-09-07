@@ -10,8 +10,8 @@ from zoneinfo import ZoneInfo
 from flask import Flask, request, jsonify, send_from_directory
 
 # Tokenni kodga yozmang. Render -> Environment Variables -> BOT_TOKEN orqali bering.
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "0"))
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8943057021:AAFbAh51QqSEN_jDdRhdbTH83y6HOtoezf8")
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "1342256845"))
 TZ = ZoneInfo("Asia/Tashkent")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
