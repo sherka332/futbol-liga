@@ -1,1 +1,273 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futbol Liga</title>
 
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background: #f2f2f2;
+            color: #111;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            margin: 6px 0;
+            border: 0;
+            border-radius: 10px;
+            background: #2481cc;
+            color: white;
+            font-size: 16px;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 8px 4px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background: #eee;
+        }
+
+        #teams {
+            display: none;
+        }
+
+        #standings {
+            display: none;
+        }
+
+        #results {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>⚽ Futbol Liga</h1>
+
+<div class="card">
+    <h3 id="welcome">Xush kelibsiz!</h3>
+    <p id="myTeam">Jamoangiz: tanlanmagan</p>
+</div>
+
+<button onclick="showTeams()">🏆 Jamoa tanlash</button>
+<button onclick="showStandings()">📊 Turnir jadvali</button>
+<button onclick="showResults()">⚽ Natijalar</button>
+
+<div id="teams" class="card">
+    <h2>Jamoalar</h2>
+    <div id="teamList"></div>
+</div>
+
+<div id="standings" class="card">
+    <h2>Turnir jadvali</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Jamoa</th>
+                <th>O</th>
+                <th>G</th>
+                <th>D</th>
+                <th>M</th>
+                <th>Ochko</th>
+            </tr>
+        </thead>
+
+        <tbody id="standingList"></tbody>
+    </table>
+</div>
+
+<div id="results" class="card">
+    <h2>Natijalar</h2>
+    <div id="resultList"></div>
+</div>
+
+<script>
+
+const tg = window.Telegram.WebApp;
+
+tg.ready();
+tg.expand();
+
+async function loadMe() {
+    try {
+        const response = await fetch("/api/me", {
+            headers: {
+                "X-Telegram-Init-Data": tg.initData
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+            const user = data.user;
+
+            document.getElementById("welcome").innerText =
+                "Salom, " + (user.first_name || "Foydalanuvchi") + "!";
+
+            if (user.team_name) {
+                document.getElementById("myTeam").innerText =
+                    "Jamoangiz: " + user.team_name;
+            }
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function showTeams() {
+
+    document.getElementById("teams").style.display = "block";
+    document.getElementById("standings").style.display = "none";
+    document.getElementById("results").style.display = "none";
+
+    const response = await fetch("/api/teams");
+    const teams = await response.json();
+
+    const list = document.getElementById("teamList");
+    list.innerHTML = "";
+
+    teams.forEach(team => {
+
+        const button = document.createElement("button");
+
+        button.innerText =
+            team.name + (team.taken ? " 🔒" : "");
+
+        if (team.taken) {
+            button.disabled = true;
+            button.style.background = "#999";
+        } else {
+            button.onclick = () => joinTeam(team.id);
+        }
+
+        list.appendChild(button);
+    });
+}
+
+async function joinTeam(teamId) {
+
+    const response = await fetch("/api/join", {
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json",
+            "X-Telegram-Init-Data": tg.initData
+        },
+
+        body: JSON.stringify({
+            team_id: teamId
+        })
+    });
+
+    const data = await response.json();
+
+    if (data.ok) {
+        alert("✅ Jamoa muvaffaqiyatli tanlandi!");
+        loadMe();
+        showTeams();
+    } else {
+        alert("❌ " + (data.error || "Xatolik"));
+    }
+}
+
+async function showStandings() {
+
+    document.getElementById("teams").style.display = "none";
+    document.getElementById("standings").style.display = "block";
+    document.getElementById("results").style.display = "none";
+
+    const response = await fetch("/api/standings");
+    const data = await response.json();
+
+    const list = document.getElementById("standingList");
+
+    list.innerHTML = "";
+
+    data.forEach(team => {
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${team.rank}</td>
+            <td style="text-align:left">${team.name}</td>
+            <td>${team.played}</td>
+            <td>${team.wins}</td>
+            <td>${team.draws}</td>
+            <td>${team.losses}</td>
+            <td><b>${team.points}</b></td>
+        `;
+
+        list.appendChild(row);
+    });
+}
+
+async function showResults() {
+
+    document.getElementById("teams").style.display = "none";
+    document.getElementById("standings").style.display = "none";
+    document.getElementById("results").style.display = "block";
+
+    const response = await fetch("/api/results");
+    const data = await response.json();
+
+    const list = document.getElementById("resultList");
+
+    list.innerHTML = "";
+
+    if (data.length === 0) {
+        list.innerHTML = "<p>Hali natijalar yo‘q.</p>";
+        return;
+    }
+
+    data.forEach(match => {
+
+        const div = document.createElement("div");
+
+        div.className = "card";
+
+        div.innerHTML = `
+            <b>${match.home}</b>
+            ${match.home_goals} : ${match.away_goals}
+            <b>${match.away}</b>
+        `;
+
+        list.appendChild(div);
+    });
+}
+
+loadMe();
+
+</script>
+
+</body>
+</html>
