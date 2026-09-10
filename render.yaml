@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: efootball-liga
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn newfile_release:app --bind 0.0.0.0:$PORT --workers 1 --threads 4
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+      - key: WEB_APP_URL
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.9
